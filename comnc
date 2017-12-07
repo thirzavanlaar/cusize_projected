@@ -1,0 +1,28 @@
+!c
+!c       ----------------------------------------------------------------
+!c
+!c*    common *comnc
+!c
+!c       ----------------------------------------------------------------
+!c
+
+      integer &
+            & ncidgrid,ncidadj,ncidql,ncidout,ncidw,&
+            & dimidt,dimidl,dimidk, &
+            & varidt,varidl,varidk, &
+            & varidjd,varidsec,varidfld,varidncld,varidatot,varidmtot,varidlmax,varidaptot, &
+            & varidap,varidqlp, &
+            & varidn,varidac,varidwc,varidmc,varidqlc,varidmean,varidstdev,varidncb, &
+            & varidpnlev,varidpw,varidpthl,varidpthv,varidpqt,varidpql
+
+
+      common /comnc/ &
+            & ncidgrid,ncidadj,ncidql,ncidout,ncidw,&
+            & dimidt,dimidl,dimidk, &
+            & varidt,varidl,varidk, &
+            & varidjd,varidsec,varidfld,varidncld,varidatot,varidmtot,varidlmax,varidaptot, &
+            & varidap,varidqlp, &
+            & varidn,varidac,varidwc,varidmc,varidqlc,varidmean,varidstdev,varidncb, &
+            & varidpnlev,varidpw,varidpthl,varidpthv,varidpqt,varidpql
+
+

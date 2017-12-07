@@ -1,0 +1,88 @@
+!c
+!c       ----------------------------------------------------------------
+!c
+!c*    common *comvar 
+!c
+!c       ----------------------------------------------------------------
+!c
+      integer &
+     &   dat (cmax,kmax), &
+     &   mark(cmax,kmax), &
+     &   ncloud, &
+     &   ind(cldmax,4), &
+     &   nbin, ntim, &
+     &   isize,ioverlap,iselect,kselect, &
+     &   cell_neighbor(cmax,vmax), & ! neighbouring grid cells per cell
+     &   nfield
+
+      real*8 jdate,jdate0,seconds
+
+      !--- grid info ---
+      real &
+     &   cell_mx   (     cmax), &    !x value of cell midpoint
+     &   cell_my   (     cmax), &    !y value of cell midpoint
+     &   clon      (     cmax), &    !longitude value of cell
+     &   clat      (     cmax), &    !latitude value of cell
+     &   cell_vx   (vmax,cmax), &    !x value of all vertices (i.e. corner points)
+     &   cell_vy   (vmax,cmax), &    !y value of all vertices (i.e. corner points)
+     &   cartesian_x(vmax,cmax), &    !x value of all vertices (i.e. corner points)
+     &   cartesian_y(vmax,cmax), &    !y value of all vertices (i.e. corner points)
+     &   cartesian_z(vmax,cmax), &    !z value of all vertices (i.e. corner points)
+     &   cell_area (     cmax), &    !cell area
+     &   darea
+      integer &
+     &   cell_adj  (cmax,vmax)       !id of horizontally adjacent cells 
+      real &
+     &   z_f  (cmax,kmax)  , &
+     &   z_h  (cmax,kmaxp1)
+
+
+      !--- model variables ---
+      real &
+     &   ql (cmax,kmax), &
+     &   qt (cmax,kmax), &
+     &   w  (cmax,kmaxp1), &
+     &   thl(cmax,kmax), &
+     &   thv(cmax,kmax)
+
+      real &
+     &   l (4,cldmax), &
+     &   kbot(cldmax), &
+     &   ktop(cldmax)
+      real &
+     &   hsize(binmax),sizmin,sizmax, &
+     &   hn   (binmax), &
+     &   hac  (binmax), &
+     &   hwc  (binmax), &
+     &   hqlc (binmax), &
+     &   hnns_mean (binmax), &
+     &   hnns_stdev (binmax), &
+     &   ncloud_bin (binmax), &
+     &   hmc  (binmax)
+      real &
+     &   hnlev(binmax,kmax), &
+     &   ha   (binmax,kmax), &
+     &   hw   (binmax,kmax), &
+     &   hm   (binmax,kmax), &
+     &   hthl (binmax,kmax), &
+     &   hqt  (binmax,kmax), &
+     &   hql  (binmax,kmax), &
+     &   hthv (binmax,kmax)
+      real &
+     &   pql(kmax),pa(kmax), aptot
+      character &
+     &   sizname*30
+
+      common /comvar/ &
+     &   jdate,jdate0,seconds, &
+     &   cell_mx, cell_my, cell_vx, cell_vy, cell_area, darea, cell_adj, &
+     &   cell_neighbor, clon, clat, &
+     &	 z_f, z_h, ql, thv, thl, qt, w, dat, mark, &
+     &   ncloud,sizmin,sizmax,ind,isize,ioverlap,iselect, &
+     &   l,kbot,ktop,&
+     &   pql,pa,aptot,kselect, &
+     &   nfield, &
+     &   nbin,ntim,hsize,hnlev,ha,hw,hm,hthl,hqt,hql,hthv, &
+     &   hn,hac,hwc,hqlc,hmc,hnns_mean,hnns_stdev,ncloud_bin,sizname
+
+
