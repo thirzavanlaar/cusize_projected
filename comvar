@@ -6,8 +6,8 @@
 !c       ----------------------------------------------------------------
 !c
       integer &
-     &   dat (cmax,kmax), &
-     &   mark(cmax,kmax), &
+     &   dat (cmax), &
+     &   mark(cmax), &
      &   ncloud, &
      &   ind(cldmax,4), &
      &   nbin, ntim, &
