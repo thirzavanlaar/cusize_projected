@@ -793,17 +793,17 @@
       integer i,j,k,ff,v
       integer dql,dw,dqt,dthl,dthv 
 
-      real temp0,temp3(cmax,kmax),temp3p1(cmax,kmaxp1), dist
+      real temp0,temp3(cmax,kmax),dist
 
 
       !--- reset ---
-      dat (:,:)  = 0
-      mark(:,:)  = -1
-      qt  (:,:)  = 0
-      thv (:,:)  = 0
-      thl (:,:)  = 0
-      ql  (:,:)  = 0
-      w   (:,:)  = 0
+      dat (:)   = 0
+      mark(:)   = -1
+      qt  (:,:) = 0
+      thv (:,:) = 0
+      thl (:,:) = 0
+      ql  (:,:) = 0
+      w   (:,:) = 0
 
       
       !--- read 3D fields from nc files ---
@@ -823,14 +823,12 @@
 
       !--- identify cloudy gridboxes & set cloud id (mask) to 0 ---
       do i=1,cmax
-      do k=1,kmax
 
-        if (ql(i,k).gt.0.) then     !criterion: condensate>0 kg/kg
-          dat (i,k) = 1
-          mark(i,k) = 0
+        if (SUM(ql(i,:)).gt.0.) then     !criterion: condensate>0 kg/kg
+          dat (i) = 1
+          mark(i) = 0
         end if
 
-      enddo
       enddo
 
 
@@ -868,9 +866,9 @@
       do k=1,kmax
       
       do i=1,cmax
-        pql(k) = pql(k) + ql (i,k)
-        pa(k)  = pa(k)  + dat(i,k)
-        if (dat(i,k).eq.1) then
+        pql = pql + SUM(ql(i,:))
+        pa  = pa  + dat(i)
+        if (dat(i).eq.1) then
           ap(i) = 1
         endif
       enddo
@@ -882,15 +880,15 @@
       aptot = aptot / (cmax)
       
       
-      pql(k) = pql(k) / (cmax)
-      pa(k)  = pa(k)  / (cmax)
+      pql = pql / (cmax)
+      pa  = pa  / (cmax)
       
       enddo
       
-      kdum = maxloc(pa)
-      kselect = kdum(1)
+      !kdum = maxloc(pa)
+      !kselect = kdum(1)
       print *,'   maximum cloud fraction = ',maxval(pa)
-      print *,'     at level ',kselect
+      !print *,'     at level ',kselect
       print *,'   projected cloud fraction = ',aptot*100.,'%'
       
       return
@@ -911,25 +909,19 @@
       print *,'clustering ...'
       
       ncloud = 0
-      do k=1,kmax
       do i=1,cmax
       
-        if (dat(i,k).gt.0.and.mark(i,k).eq.0) then
+        if (dat(i).gt.0.and.mark(i).eq.0) then
           ncloud = ncloud + 1
           !print *, '    ncloud=',ncloud
-          mark(i,k) = ncloud
-          call constructcloud(i,k,indcentre3)
+          mark(i) = ncloud
+          call constructcloud(i,indcentre3)
         endif   
         
       enddo
-      enddo
       
-      
-
       print *,'  nr of clouds in domain =',ncloud
       print *,'  '
-      
-      
       
       return
       end
@@ -942,7 +934,7 @@
 !------ find all points connected to cloudy point i1,k1 ---------
 !								  
 
-      subroutine constructcloud(i1,k1,indcentre2)
+      subroutine constructcloud(i1,indcentre2)
       
       include 'parconst'
       include 'comvar'
@@ -964,11 +956,11 @@
       
       nr2=1
       ind(nr2,1)=i1
-      ind(nr2,3)=k1
+      !ind(nr2,3)=k1
       ind(nr2,4)=0
       
-      m=mark(i1,k1)
-      print *,'    cloud found, label ',m,i1,k1
+      m=mark(i1)
+      print *,'    cloud found, label ',m,i1
 
       
    
@@ -986,7 +978,7 @@
           ind(n,4)=m 
           
           i2=ind(n,1)
-          k2=ind(n,3)
+          !k2=ind(n,3)
           
           !check horizontally adjacent cells 
           do i=1,vmax
@@ -994,21 +986,17 @@
            
             !print *, '        checking:',ind(n,1),i,cell_neighbor(ind(n,1),i)
             if (pos.gt.0) then
-              call neighbour(pos,k2,m,nr2)
+              call neighbour(pos,m,nr2)
             endif
           enddo
        
    
           !check vertically adjacent cells
-          call mod(k2+1,1,kmax,pos)
-          call neighbour(i2,pos,m,nr2)
+          !call mod(k2+1,1,kmax,pos)
+          !call neighbour(i2,pos,m,nr2)
 
-          !if (k2.ne.kmax) then
-          !call neighbour(i2,k2+1,m,nr2)
-          !endif
-          
-          call mod(k2-1,1,kmax,pos)
-          call neighbour(i2,pos,m,nr2)
+          !call mod(k2-1,1,kmax,pos)
+          !call neighbour(i2,pos,m,nr2)
           
         endif  
           
@@ -1055,35 +1043,35 @@
       real indcentre(cmax,4)
       
 
-      !--- cloud size: height ---  
-      do kk=1,kmax 
-        prof(kk)=0
-      enddo
-      
-      do n=1,nrr
-        prof(ind(n,3))=1
-      enddo
-      
-      n=0
-      ii=0
-      do kk=1,kmax 
-        n=n+prof(kk)
-        if (prof(kk).eq.1.and.ii.eq.0) then
-          kbot(mm)=kk
-          ii=1
-        endif
-        if (prof(kk).eq.0.and.ii.eq.1) then
-          ktop(mm)=kk-1
-          ii=0
-        endif
-      enddo
-      
-      l(1,mm) = n*dz
-      
-      
-      
-      !--- cloud size: sqrt(height-averaged area) ---  
-      l(2,mm) = ((nrr*darea)/n)**0.5
+!      !--- cloud size: height ---  
+!      do kk=1,kmax 
+!        prof(kk)=0
+!      enddo
+!      
+!      do n=1,nrr
+!        prof(ind(n,3))=1
+!      enddo
+!      
+!      n=0
+!      ii=0
+!      do kk=1,kmax 
+!        n=n+prof(kk)
+!        if (prof(kk).eq.1.and.ii.eq.0) then
+!          kbot(mm)=kk
+!          ii=1
+!        endif
+!        if (prof(kk).eq.0.and.ii.eq.1) then
+!          ktop(mm)=kk-1
+!          ii=0
+!        endif
+!      enddo
+!      
+!      l(1,mm) = n*dz
+!      
+!      
+!      
+!      !--- cloud size: sqrt(height-averaged area) ---  
+!      l(2,mm) = ((nrr*darea)/n)**0.5
       
       
       
@@ -1113,7 +1101,7 @@
       min_lon = 1.
       min_lat = 1.
 
-      do n=1,nrr ! this is wrong!
+      do n=1,nrr ! this is wrong! (but why again?)
         do v=1,3
           if (cell_vx(v,ind(n,1)).gt.max_lon) then
             max_lon = cell_vx(v,ind(n,1))
@@ -1181,69 +1169,69 @@
         dca=0.
 
       
-        !--- compute hor. cloud-averages ---
-        do nn=1,nrr
-          ii=ind(nn,1)
-          kk=ind(nn,3)
-          
-          
-          !--- cloud overlay options ---
-          select case (ioverlap)
-          case (1)
-            kb = kk - kbot(mm) + 1 
-          case (2)
-            kb = kmax + kk - ktop(mm)
-          case (3)
-            kb = kk
-          end select
-          
-          da(kb)   = da(kb) + 1.
-          dthl(kb) = dthl(kb) + thl(ii,kk)
-          dthv(kb) = dthv(kb) + thv(ii,kk)
-          dqt(kb)  = dqt(kb) + qt(ii,kk)
-          dql(kb)  = dql(kb) + ql(ii,kk)
-          dw(kb)   = dw(kb) + w(ii,kk)
-
-        enddo
-        
-
-        do kk=1,kmax 
-        
-        if (da(kk).gt.0) then
-          
-          nrcldlev = da(kk)
-          
-          !--- fractional stuff ---
-          da(kk) = da(kk) / (cmax)
-          dm(kk) = dw(kk) / (cmax)
-        
-          !--- add to sub-ensemble ---
-          dcql = dcql + dql(kk)
-          dcw  = dcw + dw(kk)
-          dcm  = dcm + dm(kk)
-          
-          !--- level-averages ---
-          dthl(kk) = dthl(kk) / nrcldlev 
-          dthv(kk) = dthv(kk) / nrcldlev 
-          dqt(kk)  = dqt(kk) / nrcldlev 
-          dql(kk)  = dql(kk) / nrcldlev 
-          dw(kk)   = dw(kk)  / nrcldlev 
-          
-!          print *,kk,nrcldlev,dw(kk) 
-
-          !--- add to sub-ensemble-profile stack ---
-          hnlev(binnr,kk) = hnlev(binnr,kk) + 1.
-          ha(binnr,kk)    = ha(binnr,kk) + da(kk)
-          hthl(binnr,kk)  = hthl(binnr,kk) + dthl(kk)
-          hthv(binnr,kk)  = hthv(binnr,kk) + dthv(kk)
-          hql(binnr,kk)   = hql(binnr,kk) + dql(kk)
-          hqt(binnr,kk)   = hqt(binnr,kk) + dqt(kk)
-          hw(binnr,kk)    = hw(binnr,kk) + dw(kk)
-          hm(binnr,kk)    = hm(binnr,kk) + dm(kk)
-                  
-        endif
-        
-        enddo
+!        !--- compute hor. cloud-averages ---
+!        do nn=1,nrr
+!          ii=ind(nn,1)
+!          kk=ind(nn,3)
+!          
+!          
+!          !--- cloud overlay options ---
+!          select case (ioverlap)
+!          case (1)
+!            kb = kk - kbot(mm) + 1 
+!          case (2)
+!            kb = kmax + kk - ktop(mm)
+!          case (3)
+!            kb = kk
+!          end select
+!          
+!          da(kb)   = da(kb) + 1.
+!          dthl(kb) = dthl(kb) + thl(ii,kk)
+!          dthv(kb) = dthv(kb) + thv(ii,kk)
+!          dqt(kb)  = dqt(kb) + qt(ii,kk)
+!          dql(kb)  = dql(kb) + ql(ii,kk)
+!          dw(kb)   = dw(kb) + w(ii,kk)
+!
+!        enddo
+!        
+!
+!        do kk=1,kmax 
+!        
+!        if (da(kk).gt.0) then
+!          
+!          nrcldlev = da(kk)
+!          
+!          !--- fractional stuff ---
+!          da(kk) = da(kk) / (cmax)
+!          dm(kk) = dw(kk) / (cmax)
+!        
+!          !--- add to sub-ensemble ---
+!          dcql = dcql + dql(kk)
+!          dcw  = dcw + dw(kk)
+!          dcm  = dcm + dm(kk)
+!          
+!          !--- level-averages ---
+!          dthl(kk) = dthl(kk) / nrcldlev 
+!          dthv(kk) = dthv(kk) / nrcldlev 
+!          dqt(kk)  = dqt(kk) / nrcldlev 
+!          dql(kk)  = dql(kk) / nrcldlev 
+!          dw(kk)   = dw(kk)  / nrcldlev 
+!          
+!!          print *,kk,nrcldlev,dw(kk) 
+!
+!          !--- add to sub-ensemble-profile stack ---
+!          hnlev(binnr,kk) = hnlev(binnr,kk) + 1.
+!          ha(binnr,kk)    = ha(binnr,kk) + da(kk)
+!          hthl(binnr,kk)  = hthl(binnr,kk) + dthl(kk)
+!          hthv(binnr,kk)  = hthv(binnr,kk) + dthv(kk)
+!          hql(binnr,kk)   = hql(binnr,kk) + dql(kk)
+!          hqt(binnr,kk)   = hqt(binnr,kk) + dqt(kk)
+!          hw(binnr,kk)    = hw(binnr,kk) + dw(kk)
+!          hm(binnr,kk)    = hm(binnr,kk) + dm(kk)
+!                  
+!        endif
+!        
+!        enddo
         
       !--- normalize sub-ensemble ---
       dcql = dcql / nrr          !volume average
@@ -1269,20 +1257,20 @@
 !------ label the neighbours ---------------
 !								  
         
-      subroutine neighbour(i3,k3,mm,nrr)
+      subroutine neighbour(i3,mm,nrr)
       
       include 'parconst'
       include 'comvar'
 
-      integer i3,k3,mm,nrr
+      integer i3,mm,nrr
      
-      if ( dat(i3,k3).gt.0. .and. mark(i3,k3).eq.0 ) then
+      if ( dat(i3).gt.0. .and. mark(i3).eq.0 ) then
         !print *, '        found:',i3
-        mark(i3,k3)=mm
+        mark(i3)=mm
         nrr=nrr+1
 
         ind(nrr,1)=i3
-        ind(nrr,3)=k3
+        !ind(nrr,3)=k3
         ind(nrr,4)=0
       endif
  
