@@ -18,23 +18,18 @@
 
 
       integer, external :: JD, GDATE
-      real, external :: triangle_area
       real,parameter :: radius = 6371000
 
 
       !--- open nc files ---
       fname_var = 'subsubdomain_lasttimestep.nc'
-      !fname_var = 'variable_qc_DOM01_ML_20130425T000000Z.nc'
       print *,'which input file (ql)?'
-      !read(5,*) fname_var
       print *,'opening file: ',fname_var
       STATUS = nf_open(fname_var, nf_nowrite, ncidql)
       if (STATUS .ne. nf_noerr) call handle_err(STATUS)
 
       fname_grid = "subsubgrid.nc"
-      !fname_grid = "NarvalDom2_NestE-R02B14_DOM03.nc"
       print *,'which input file (grid)?'
-      !read(5,*) fname_grid
       print *,'opening file: ',fname_grid
       STATUS = nf_open(fname_grid, nf_nowrite, ncidgrid)
       if (STATUS .ne. nf_noerr) call handle_err(STATUS)
@@ -496,10 +491,6 @@
           nlcloudmax=n
         endif
       enddo
-!      write(6,*) 'how many bins in output? (binsize=', &
-!     &  sizmin,'m  largest cloud=',lcloudmax,'m  requires ', &
-!     &  nlcloudmax,' bins)'
-!      read(5,*) nbinout
       
       
       !--- NetCDF output ----
@@ -790,7 +781,7 @@
 
       integer STATUS, VARID, START1, COUNT1, START3(3), COUNT3(3)
 
-      integer i,j,k,ff,v
+      integer i,ff,v
       integer dql,dw,dqt,dthl,dthv 
 
       real temp0,temp3(cmax,kmax),dist
@@ -849,21 +840,17 @@
       include 'parconst'
       include 'comvar'
 
-      integer i,j,k,kdum(1)
+      integer i
       real ap(cmax)
       
       print *,'calculating slab-average profiles ...'
       
-      do k=1,kmax
-        pql(k)=0
-        pa(k)=0
-      enddo
+      pql=0
+      pa=0
       
       do i=1,cmax
         ap(i) = 0
       enddo
-      
-      do k=1,kmax
       
       do i=1,cmax
         pql = pql + SUM(ql(i,:))
@@ -879,16 +866,10 @@
       enddo
       aptot = aptot / (cmax)
       
-      
       pql = pql / (cmax)
       pa  = pa  / (cmax)
       
-      enddo
-      
-      !kdum = maxloc(pa)
-      !kselect = kdum(1)
       print *,'   maximum cloud fraction = ',maxval(pa)
-      !print *,'     at level ',kselect
       print *,'   projected cloud fraction = ',aptot*100.,'%'
       
       return
@@ -903,7 +884,7 @@
       include 'parconst'
       include 'comvar'
 
-      integer i,j,k,n
+      integer i,n
       real indcentre3(cmax,4)
  
       print *,'clustering ...'
@@ -913,7 +894,6 @@
       
         if (dat(i).gt.0.and.mark(i).eq.0) then
           ncloud = ncloud + 1
-          !print *, '    ncloud=',ncloud
           mark(i) = ncloud
           call constructcloud(i,indcentre3)
         endif   
@@ -927,8 +907,6 @@
       end
    
                 
-        
-             
       
 !
 !------ find all points connected to cloudy point i1,k1 ---------
@@ -939,31 +917,24 @@
       include 'parconst'
       include 'comvar'
 
-      integer i,n,m,i1,k1,i2,k2,pos,hbot,htop
+      integer i,n,m,i1,i2,k2,pos,hbot,htop
       integer nr2,nrtemp,start3(2),count3(2)
       real indcentre2(cmax,4)
 
       start3 = (/ 1   , 1    /)
       count3 = (/ cmax, vmax /)
  
-      !status = NF_INQ_VARID(ncidgrid, 'neighbor_cell_index', varid)
-      !status = NF_GET_VARA_INT(ncidgrid, varid, start3, count3, cell_neighbor)
-
-     
       do n=1,cldmax      !maximum possible amount of clouds (cmax*kmax)
-        ind(n,4)=-1      !checker status. -1: untreated. 0: part of cloud, but unchecked for neighbors. Other: part of cloud and checked
+        ind(n,2)=-1      !checker status. -1: untreated. 0: part of cloud, but unchecked for neighbors. Other: part of cloud and checked
       enddo
       
       nr2=1
       ind(nr2,1)=i1
-      !ind(nr2,3)=k1
-      ind(nr2,4)=0
+      ind(nr2,2)=0
       
       m=mark(i1)
       print *,'    cloud found, label ',m,i1
 
-      
-   
       !print *,'    searching neighbouring points...'
       nrtemp=0
       do while(nr2.gt.nrtemp)
@@ -971,14 +942,12 @@
        nrtemp = nr2    !-- new check --
        do n=1,nrtemp
         
-        if (ind(n,4).eq.0) then
+        if (ind(n,2).eq.0) then
 
           !--belongs to cloud, but not yet checked for neighbours ---
           
-          ind(n,4)=m 
-          
+          ind(n,2)=m 
           i2=ind(n,1)
-          !k2=ind(n,3)
           
           !check horizontally adjacent cells 
           do i=1,vmax
@@ -1038,7 +1007,7 @@
       include 'parconst'
       include 'comvar'
 
-      integer kk,ii,jj,n,mm,prof(kmax),surf(cmax),nrr,v
+      integer ii,n,mm,prof(kmax),surf(cmax),nrr,v
       real max_lat,max_lon,min_lat,min_lon
       real indcentre(cmax,4)
       
@@ -1132,7 +1101,6 @@
       return
       end
         
-             
       
 !
 !-----------------------------------------------------------------
@@ -1142,10 +1110,9 @@
       include 'parconst'
       include 'comvar'
 
-      integer nn,binnr,ii,jj,kk,kb,nrr,mm,nrcldlev
+      integer nn,binnr,ii,jj,kb,nrr,mm,nrcldlev
       
-      real dthl(kmax),dqt(kmax),dw(kmax),dql(kmax), &
-     &     dthv(kmax),da(kmax),dm(kmax)
+      real dthl,dqt,dw,dql,dthv,da,dm
       real dcw,dcql,dca,dcm,indcentre(cmax,4)
               
         !--- sort the cloud by its size ---
@@ -1153,15 +1120,12 @@
         print*, 'binnr:',binnr
         indcentre(mm,4) = int(binnr)       
         
-
-        do kk=1,kmax 
-          dthl(kk)=0.
-          dthv(kk)=0.
-          dqt(kk)=0.
-          dql(kk)=0.
-          dw(kk)=0.
-          da(kk)=0.
-        enddo
+        dthl=0.
+        dthv=0.
+        dqt=0.
+        dql=0.
+        dw=0.
+        da=0.
         
         dcql=0.
         dcw=0.
@@ -1270,8 +1234,7 @@
         nrr=nrr+1
 
         ind(nrr,1)=i3
-        !ind(nrr,3)=k3
-        ind(nrr,4)=0
+        ind(nrr,2)=0
       endif
  
       return
@@ -1342,104 +1305,6 @@
 
       return
       end
-
-
-
-
-
-
-
-
-!--------------------------------------------------------------------
-
-      !! Computes spherical area of a triangle
-      !!
-      !! Taken from ICON code
-
-
-      !ELEMENTAL FUNCTION triangle_area (x0, x1, x2) result(area)
-      FUNCTION triangle_area (x0, x1, x2) result(area)
- 
-      !TYPE(t_cartesian_coordinates), INTENT(in) :: x0, x1, x2
- 
-      !REAL(wp) :: area
-      !REAL(wp) :: z_s12, z_s23, z_s31, z_ca1, z_ca2, z_ca3, z_a1, z_a2, z_a3
-      real x0(3),x1(3),x2(3),area,u12(3),u23(3),u31(3),z_s12,z_s23,z_s31
-      real z_ca1,z_ca2,z_ca3,z_a1,z_a2,z_a3
-      real, parameter :: pi=4.D0*DATAN(1.D0)
-
-      u12(:) = 0
-      u23(:) = 0
-      u31(:) = 0
-
-      !TYPE(t_cartesian_coordinates) :: u12, u23, u31
- 
-      !! This variant to calculate the area of a spherical triangle
-      !! is more precise.
- 
-      !!  Compute cross products Uij = Vi x Vj.
-      !u12 = vector_product(x0, x1)
-      !u23 = vector_product(x1, x2)
-      !u31 = vector_product(x2, x0)
- 
-      call vector_product(x0,x1,u12)
-      call vector_product(x1,x2,u23)
-      call vector_product(x2,x0,u31)
-
-      print *, 'u12:',u12
-   
-      !!  Normalize Uij to unit vectors.
-      z_s12 = DOT_PRODUCT ( u12(1:3), u12(1:3) )
-      z_s23 = DOT_PRODUCT ( u23(1:3), u23(1:3) )
-      z_s31 = DOT_PRODUCT ( u31(1:3), u31(1:3) )
-  
-      !!  Test for a degenerate triangle associated with collinear vertices.
-      IF (z_s12 == 0.0 .or. z_s23 == 0.0  .or. z_s31 == 0.0) THEN
-        area = 0.0
-        RETURN
-      END IF ! In this If statement I removed all the 'wp', 0.0_wp
- 
-      z_s12 = SQRT(z_s12)
-      z_s23 = SQRT(z_s23)
-      z_s31 = SQRT(z_s31)
-  
-      u12(1:3) = u12(1:3)/z_s12
-      u23(1:3) = u23(1:3)/z_s23
-      u31(1:3) = u31(1:3)/z_s31
-
-      !!  Compute interior angles Ai as the dihedral angles between planes:
-      !!  CA1 = cos(A1) = -<U12,U31>
-      !!  CA2 = cos(A2) = -<U23,U12>
-      !!  CA3 = cos(A3) = -<U31,U23>
-      z_ca1 = -u12(1)*u31(1)-u12(2)*u31(2)-u12(3)*u31(3)
-      z_ca2 = -u23(1)*u12(1)-u23(2)*u12(2)-u23(3)*u12(3)
-      z_ca3 = -u31(1)*u23(1)-u31(2)*u23(2)-u31(3)*u23(3)
- 
-      IF (z_ca1 < -1.0) z_ca1 = -1.0
-      IF (z_ca1 >  1.0) z_ca1 =  1.0
-      IF (z_ca2 < -1.0) z_ca2 = -1.0
-      IF (z_ca2 >  1.0) z_ca2 =  1.0
-      IF (z_ca3 < -1.0) z_ca3 = -1.0
-      IF (z_ca3 >  1.0) z_ca3 =  1.0
- 
-      z_a1 = ACOS(z_ca1)
-      z_a2 = ACOS(z_ca2)
-      z_a3 = ACOS(z_ca3)
-
-      print *, 'z_a1:',z_a1
-      print *, 'z_a2:',z_a2
-      print *, 'z_a3:',z_a3
-
- 
-      !!  Compute areas = z_a1 + z_a2 + z_a3 - pi.
-      area = z_a1+z_a2+z_a3-pi
-
-      print *, 'area in function:',area
-      print *, 'pi:',pi
- 
-      IF ( area < 0.0 ) area = 0.0
- 
-      END FUNCTION triangle_area
 
 
       !-----haversine formula to calculate distance between two points----

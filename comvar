@@ -9,7 +9,7 @@
      &   dat (cmax), &
      &   mark(cmax), &
      &   ncloud, &
-     &   ind(cldmax,4), &
+     &   ind(cldmax,2), &
      &   nbin, ntim, &
      &   isize,ioverlap,iselect,kselect, &
      &   cell_neighbor(cmax,vmax), & ! neighbouring grid cells per cell
