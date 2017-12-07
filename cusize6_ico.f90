@@ -27,7 +27,7 @@
 
 
       !--- open nc files ---
-      fname_var = 'subsubdomain_lasttimestep2.nc'
+      fname_var = 'subsubdomain_lasttimestep.nc'
       !fname_var = 'variable_qc_DOM01_ML_20130425T000000Z.nc'
       print *,'which input file (ql)?'
       !read(5,*) fname_var
@@ -109,15 +109,6 @@
       endif
 
 
-      !status = NF_INQ_VARID(ncidgrid, 'cell_circumcenter_cartesian_x',varid)
-      !if (status /= nf_noerr) call handle_err(status)
-      !status = NF_GET_VARA_REAL(ncidgrid, varid, start1, count1, temp1)
-      !if (status /= nf_noerr) then
-      !  call handle_err(status)
-      !else
-      !  cell_mx = temp1
-      !endif
-      !print *, 'cell_mx (cartesian):',cell_mx(1)
 
       status = NF_INQ_VARID(ncidql, 'clat', varid)
       if (status /= nf_noerr) call handle_err(status)
@@ -128,15 +119,6 @@
         clat = temp1
       endif
 
-      !status = NF_INQ_VARID(ncidgrid, 'cell_circumcenter_cartesian_y',varid)
-      !if (status /= nf_noerr) call handle_err(status)
-      !status = NF_GET_VARA_REAL(ncidgrid, varid, start1, count1, temp1)
-      !if (status /= nf_noerr) then
-      !  call handle_err(status)
-      !else
-      !  cell_my = temp1
-      !endif
-      !print *, 'cell_my (cartesian):',cell_my(1)
 
 
       !  load cell areas
