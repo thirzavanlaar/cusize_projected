@@ -30,3 +30,13 @@
 *.exe
 *.out
 *.app
+
+# Run and obj folder
+obj/*
+run/*
+
+# Exlcude files with constants
+comnc
+makefile
+parconst
+parconst_ico_subsubdomain
