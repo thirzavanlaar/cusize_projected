@@ -6,6 +6,7 @@
 *.lo
 *.o
 *.obj
+cusize6_ico
 
 # Precompiled Headers
 *.gch

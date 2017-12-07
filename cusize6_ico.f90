@@ -10,7 +10,7 @@
       include 'comvar'
       include 'comnc'
 
-      integer f,itim,itimold,nx,nk,i,v,k,yyyy,mm,dd,iout,temp3(cmax,vmax)
+      integer f,itim,itimold,nx,nk,i,v,k,yyyy,mm,dd,temp3(cmax,vmax)
       INTEGER  STATUS, timID,xID,varid,start1(1),count1(1), START2(2), COUNT2(2),start3(2),count3(2)
       character fname_var*75, fname_grid*75
       real temp0,temp1(cmax),temp2(vmax,cmax),tempzf(kmax),tempzh(cmax,kmaxp1),xx0(3,cmax),xx1(3,cmax),xx2(3,cmax),test_area,indcentre4(cmax,4)
@@ -20,10 +20,6 @@
       integer, external :: JD, GDATE
       real, external :: triangle_area
       real,parameter :: radius = 6371000
-
-
-      !iout = 0   !ASCII output
-      iout = 1   !NetCDF output
 
 
       !--- open nc files ---
@@ -273,7 +269,7 @@
 
         !--- time-averaging procedures ---
         if (itim.gt.itimold) then
-          call finishhistogram(itimold,iout)
+          call finishhistogram(itimold)
           call inithistogram
         endif
 
@@ -301,7 +297,7 @@
       !#####################################################
       
 
-      call finishhistogram(itim,iout)
+      call finishhistogram(itim)
 
 
       !--- close nc files ---
@@ -310,10 +306,8 @@
       if (status /= nf_noerr) call handle_err(status)
       status = NF_CLOSE (ncidgrid)
       if (status /= nf_noerr) call handle_err(status)
-      if (iout.eq.1) then
-        status = NF_CLOSE(ncidout)
-        if (STATUS .ne. nf_noerr) call handle_err(STATUS)
-      endif
+      status = NF_CLOSE(ncidout)
+      if (STATUS .ne. nf_noerr) call handle_err(STATUS)
       
 
 
@@ -569,7 +563,7 @@
 !
 !-----------------------------------------------------------------
 !								  
-      subroutine finishhistogram(itim,iout)
+      subroutine finishhistogram(itim)
       
       implicit none
 
@@ -579,7 +573,7 @@
 
       include "netcdf.inc"
 
-      integer n,k,slen,itim,iout
+      integer n,k,slen,itim
       character ext*10,sform1*20,sform2,ext4*4
       real ndum,mdum,adum,lcloudmax,nlcloudmax
 
@@ -664,97 +658,6 @@
 !      read(5,*) nbinout
       
       
-      !--- ASCII output ----
-      select case (iout)
-
-      case (0)
-
-      print *,'writing to ASCII files in cusize_output/'
-
-      write(ext,'(i10.10)') nbin
-      slen = int(log10(real(nbin)))
-      sform1 = '(a1,' // ext(10-slen:10) // 'f8.0)'
-      
-      write(ext4,'(i4.4)') itim
-
-      open(13,file='cusize_output/dens_' // ext4 // '.out')
-      write(13,'(a,f4.0,a,i4,a,f7.0,a,f7.2,a,a,a30)') '# binsize: ',sizmin, &
-     &  '  nr of fields: ',nfield, &
-     &  '  nr of sampled clouds: ',ndum*nfield, &
-     &  '  cumulative projected cloud fraction: ',adum*100, '%', &
-     &  '  size-def: ',sizname
-      write(13,'(2a)') '# size[m]   nr[1/m]   cc[%/m]', &
-     &  '   w[m/s]    m[10^-3 1/s] ql[g/kg]'
-      do n=1,nbin
-        write(13,'(f9.0,5f10.5)') hsize(n),hn(n), &
-     &    hac(n)*1.0e2,hwc(n),hmc(n)*1.0e3,hqlc(n)*1.0e3
-      enddo
-      close(13)
-       
-       
-      open(13,file='cusize_output/number_profav_' // ext4 // '.out')
-      write(13,'(a26,i4,a8)') &
-     &   '# nr of sampled clouds in ',nfield,' fields '
-      write(13,sform1) '#',(hsize(n),n=1,nbin)
-      do k=1,kmax
-        write(13,'('//ext(10-slen:10)//'f8.0)')  &
-     &   (hnlev(n,k),n=1,nbin)
-      enddo
-      close(13)
-
-      open(13,file='cusize_output/w_profav_' // ext4 // '.out')
-      write(13,'(a24,i4,a8)')  &
-     &   '# cloud-average w[m/s] ',nfield,' fields '
-      write(13,sform1) '#',(hsize(n),n=1,nbin)
-      do k=1,kmax
-        write(13,'('//ext(10-slen:10)//'f8.3)')  &
-     &   (hw(n,k),n=1,nbin)
-      enddo
-      close(13)
-     
-      open(13,file='cusize_output/thl_profav_' // ext4 // '.out')
-      write(13,'(a24,i4,a8)')  &
-     &   '# cloud-average thl[K]  ',nfield,' fields '
-      write(13,sform1) '#',(hsize(n),n=1,nbin)
-      do k=1,kmax
-        write(13,'('//ext(10-slen:10)//'f8.2)')  &
-     &   (hthl(n,k),n=1,nbin)
-      enddo
-      close(13)
-     
-      open(13,file='cusize_output/thv_profav_' // ext4 // '.out')
-      write(13,'(a24,i4,a8)')  &
-     &   '# cloud-average thv[K]  ',nfield,' fields '
-      write(13,sform1) '#',(hsize(n),n=1,nbin)
-      do k=1,kmax
-        write(13,'('//ext(10-slen:10)//'f8.2)')  &
-     &   (hthv(n,k),n=1,nbin)
-      enddo
-      close(13)
-     
-      open(13,file='cusize_output/qt_profav_' // ext4 // '.out')
-      write(13,'(a26,i4,a8)')  &
-     &   '# cloud-average qt[g/kg]  ',nfield,' fields '
-      write(13,sform1) '#',(hsize(n),n=1,nbin)
-      do k=1,kmax
-        write(13,'('//ext(10-slen:10)//'f8.3)')  &
-     &   (hqt(n,k)*1.0e3,n=1,nbin)
-      enddo
-      close(13)
-     
-      open(13,file='cusize_output/ql_profav_' // ext4 // '.out')
-      write(13,'(a26,i4,a8)')  &
-     &   '# cloud-average ql[g/kg]  ',nfield,' fields '
-      write(13,sform1) '#',(hsize(n),n=1,nbin)
-      do k=1,kmax
-        write(13,'('//ext(10-slen:10)//'f8.4)')  &
-     &   (hql(n,k)*1.0e3,n=1,nbin)
-      enddo
-      close(13)
-
-
-      case (1)
-
       !--- NetCDF output ----
       fname_out = "cusize_output.nc"
       print *,'writing size histograms to NetCDF file ',fname_out
@@ -1016,7 +919,6 @@
       status = NF_PUT_VARA_REAL(ncidout,varidpql,start3,count3,hql(1:nbin,1:kmax))
       if (STATUS .ne. nf_noerr) call handle_err(STATUS)
 
-      end select
 
 
       print *,' '
