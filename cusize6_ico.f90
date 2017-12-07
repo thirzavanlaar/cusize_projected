@@ -151,15 +151,9 @@
       endif
 
 
-      !do k = 1,kmax
-      !  print *, k, ' zf=', z_f(1,k), ' zh=', z_h(1,k)
-      !enddo
-      !print *, kmaxp1, '                       zh=', z_h(1,kmaxp1)
-
       !load cell vertex locations
       start2 = (/ 1   , 1    /)
       count2 = (/ vmax, cmax /)
-      !count2 = (/ cmax, vmax /)
      
       status = NF_INQ_VARID(ncidgrid, 'clon_vertices', varid)
       if (status /= nf_noerr) call handle_err(status)
@@ -194,49 +188,17 @@
       endif
 
 
-!--------------------------------------------------------------------
-
-      !  identify neigboring cells
-      !
-      !	int neighbor_cell_index(nv, cell) ;
-      !		neighbor_cell_index:long_name = "cell neighbor index" ;
-      !
-
-
-      ! STATUS = nf_open('grid_adj.nc', nf_nowrite, ncidadj)    !try to load the grid file, if present
-      ! if (STATUS .ne. nf_noerr) then
-      !   call handle_err(STATUS)
-
-      !   call findadjcells     !procedure to identify neighboring cells
-
-      ! else
-
-      !   print *,"loading neighboring cell information from file..."
-      !   print *,""
-      !   start2 = (/ 1   , 1    /)
-      !   count2 = (/ cmax, vmax /)    
-      !   status = NF_INQ_VARID     (ncidadj, 'cell_adj', varid)
-      !   status = NF_GET_VARA_REAL (ncidadj, varid, start2, count2, cell_adj)
-      !   if (STATUS .ne. nf_noerr) call handle_err(STATUS)
-      !   status = NF_CLOSE (ncidadj)
-
-      ! endif
-
-
-
       !--- user input ---
       call userinput
-
 
 
       !--- reset the size densities ---
       call inithistogram
 
 
-
       !################# main time loop ####################
       !
-      status = NF_INQ_VARID     (ncidql, 'time', varid)
+      status = NF_INQ_VARID (ncidql, 'time', varid)
       if (status /= nf_noerr) call handle_err(status)
 
       itimold = 1
@@ -285,9 +247,9 @@
 
         call cluster(indcentre4)
 
-        if (ncloud.gt.0) then
-          call nnspacing(nbin,indcentre4)
-        endif
+        !if (ncloud.gt.0) then
+        !  call nnspacing(nbin,indcentre4)
+        !endif
 
         !--- update time index ---
         itimold = itim
@@ -396,124 +358,6 @@
      
       return
       end
-     
-     
-!
-!-----------------------------------------------------------------
-!								  
-      subroutine findadjcells
-      
-      include 'parconst'
-      include 'comvar'
-
-      include "netcdf.inc"
-
-      integer i,v,i2,v2,n,ma,mt
-      real dist(vmax,vmax)
-      integer status,ncid,dimidc,dimidv,dd(2),varid,start2(2),count2(2)
-      character fname_out*75
-     
-      print *,"identifying adjacent cells..."
-      print *,'  '
-
-      cell_adj(:,:)  = -1
- 
-
-      do i=1,cmax
-
-      ma=0
-      mt=0
-
-      do i2=1,cmax
-
-        !for each cell combination, determine nr of shared corner points
-        n=0
-        dist(:,:) = -1
-
-        do v=1,vmax
-        do v2=1,vmax
-
-          dist(v,v2) = ( ( cell_vx(v,i) - cell_vx(v2,i2) )**2 + ( cell_vy(v,i) - cell_vy(v2,i2) )**2 )**0.5
-          !print *, "  ",i, i2, v, v2, " dist = ", dist(v,v2)
-
-          if (dist(v,v2).eq.0.) then
-            n=n+1
-          endif
-
-        enddo
-        enddo
-
-        !print *,i,i2,n," dist = ", sum(dist),sum(dist)/9
-
-        !check number of matching vertices
-        select case (n)
-          case(vmax+1:)
-            print *,"   --> ", i, i2, n, " vertices match: something is wrong with the grid"
-          case(vmax) 
-            !print *,"   --> ", i, i2, n, " self"
-          case(2) 
-            !print *,"   --> ", i, i2, n, " adjacent"
-            ma = ma + 1
-            cell_adj(i,ma) = i2  !memorize index of this cell for later use
-          case(1) 
-            !print *,"   --> ", i, i2, n, " touching"
-            mt = mt + 1
-          case(0) 
-            !print *,"   --> ", i, i2, n, " separated"
-        end select
-
-
-      enddo  !i2
-
-      print *,i," total adjacent = ", ma
-      !print *,i," total touching = ", mt
-
-      enddo  !i
-   
-
-      !do i=1,cmax
-      !print *,"cell: ",i
-      !do v=1,vmax
-      !  print *,"   ",v,cell_adj(i,v)
-      !enddo
-      !enddo
-
-
-      fname_out = "grid_adj.nc"
-      print *,'writing adjacent cell info to file: ',fname_out
-      STATUS = nf_create(fname_out, nf_clobber, ncid)
-      if (STATUS .ne. nf_noerr) call handle_err(STATUS)
-      status = NF_DEF_DIM(ncid,'ncells',cmax,dimidc)
-      if (STATUS .ne. nf_noerr) call handle_err(STATUS)
-      status = NF_DEF_DIM(ncid,'nv'    ,vmax,dimidv)
-      if (STATUS .ne. nf_noerr) call handle_err(STATUS)
-
-      !status = NF_DEF_VAR(fileid,'ncells',NF_REAL,1,dd,varidx)
-      !status = NF_DEF_VAR(fileid,'nv',NF_REAL,1,dd,varidx)
-      dd(1)=dimidc
-      dd(2)=dimidv
-      status = NF_DEF_VAR(ncid,'cell_adj',nf_real,2,dd,varid)
-      if (STATUS .ne. nf_noerr) call handle_err(STATUS)
-
-      !Change mode of netCDF operation
-      status = NF_ENDDEF(ncid)
-      if (STATUS .ne. nf_noerr) call handle_err(STATUS)
-
-      start2(1)=1
-      start2(2)=1
-      count2(1)=cmax
-      count2(2)=vmax
-      status = NF_PUT_VARA_REAL(ncid,varid,start2,count2,cell_adj)
-      if (STATUS .ne. nf_noerr) call handle_err(STATUS)
-
-      status = NF_CLOSE(ncid)
-      if (STATUS .ne. nf_noerr) call handle_err(STATUS)
-
-      return
-      end
-     
-      
-
      
 !
 !-----------------------------------------------------------------
@@ -976,20 +820,6 @@
         ql = temp3
       endif
       
-      !RN only for testing: put in an artificial cloud, size 2*100km, in middle of grid
-      !do i=1,cmax
-      !  dist = ( (cell_mx(i) - 0.)**2 + (cell_my(i) - 0.)**2 ) **0.5
-      !  if ( dist.le.100000. ) then
-      !    !print *, '   ',i,'  mx=',cell_mx(i),'  my=',cell_my(i),'  dist=',dist
-      !    !do v=1,vmax
-      !    !  print *, '          ',v,'  i_adj=',cell_adj(i,v)
-      !    !enddo
-      !    !ql(i,20) = 0.001   
-      !    !ql(i,10:20) = 0.001   
-      !    ql(i,10:30) = 0.001   
-      !  endif
-      !enddo
-
 
       !--- identify cloudy gridboxes & set cloud id (mask) to 0 ---
       do i=1,cmax
@@ -1067,8 +897,6 @@
       end
 
 
-
-      
 !
 !-----------------------------------------------------------------
 !								  
@@ -1762,6 +1590,3 @@
 
        end
 
-
-
- 
