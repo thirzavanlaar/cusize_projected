@@ -23,12 +23,14 @@
 
       !--- open nc files ---
       fname_var = 'subsubdomain_lasttimestep.nc'
+      !fname_var = 'lasttimestep.nc'
       print *,'which input file (ql)?'
       print *,'opening file: ',fname_var
       STATUS = nf_open(fname_var, nf_nowrite, ncidql)
       if (STATUS .ne. nf_noerr) call handle_err(STATUS)
 
       fname_grid = "subsubgrid.nc"
+      !fname_grid = "NarvalDom2_NestE-R02B14_DOM03.nc"
       print *,'which input file (grid)?'
       print *,'opening file: ',fname_grid
       STATUS = nf_open(fname_grid, nf_nowrite, ncidgrid)
@@ -258,11 +260,15 @@
 
 
       !--- close nc files ---
-      print *,'closing NetCDF files'
-      status = NF_CLOSE (ncidql)
-      if (status /= nf_noerr) call handle_err(status)
-      status = NF_CLOSE (ncidgrid)
-      if (status /= nf_noerr) call handle_err(status)
+      print *,'closing NetCDF file ql'
+      status = NF_CLOSE(ncidql)
+      if (status /= nf_noerr) call handle_err(STATUS)
+      print *,'closing NetCDF file grid'
+      print *,'ncidgrid:',ncidgrid
+
+      status = NF_CLOSE(ncidgrid)
+      if (status /= nf_noerr) call handle_err(STATUS)
+      print *,'closing NetCDF file out'
       status = NF_CLOSE(ncidout)
       if (STATUS .ne. nf_noerr) call handle_err(STATUS)
       
@@ -382,14 +388,14 @@
         hnns_stdev(n) = 0.
         
         do k=1,kmax
-          hnlev(n,k) = 0.
-          hthl(n,k) = 0.
-          hthv(n,k) = 0.
-          hqt(n,k) = 0.
-          hql(n,k) = 0.
-          hw(n,k) = 0.
-          ha(n,k) = 0.
-          hm(n,k) = 0.
+          hnlev(n) = 0.
+          hthl(n) = 0.
+          hthv(n) = 0.
+          hqt(n) = 0.
+          hql(n) = 0.
+          hw(n) = 0.
+          ha(n) = 0.
+          hm(n) = 0.
        enddo
       enddo
      
@@ -428,7 +434,7 @@
       ndum=0
       !mdum=0
       adum=0
-      
+     
       do n=1,nbin
         
         !--- sub-ensemble-averages (div by nr of clouds in sub-ens.) ---
@@ -444,30 +450,40 @@
           hmc(n)  = hmc(n)  / (nfield*sizmin)
         endif
 
-        do k=1,kmax
-        
-        if (hnlev(n,k).gt.0) then
+        if (hnlev(n).gt.0) then
           
           !--- sub-ensemble averages at z----
-          hthl(n,k) = hthl(n,k) / hnlev(n,k)
-          hthv(n,k) = hthv(n,k) / hnlev(n,k)
-          hql(n,k)  = hql(n,k)  / hnlev(n,k)
-          hqt(n,k)  = hqt(n,k)  / hnlev(n,k)
-          hw(n,k)   = hw(n,k)   / hnlev(n,k)
-          hm(n,k)   = hm(n,k)   / hnlev(n,k)
+          hthl(n) = hthl(n) / hnlev(n)
+          hthv(n) = hthv(n) / hnlev(n)
+          hql(n)  = hql(n)  / hnlev(n)
+          hqt(n)  = hqt(n)  / hnlev(n)
+          hw(n)   = hw(n)   / hnlev(n)
+          hm(n)   = hm(n)   / hnlev(n)
           
           !--- nr of clouds in sub-ensemble at z----
-          hnlev(n,k) = hnlev(n,k)      ! What is this for?
+          hnlev(n) = hnlev(n)      ! What is this for?
           
         endif
         
-        enddo
+        if (hn(n).ne.0.) then  
+          print*,'hn(n):',hn(n)
+          ndum = ndum + hn(n)*sizmin
+          adum = adum + hac(n)*sizmin
+          !mdum = mdum + hmc(n)*sizmin
+        endif
 
-        ndum = ndum + hn(n)*sizmin
-        adum = adum + hac(n)*sizmin
-        !mdum = mdum + hmc(n)*sizmin
+      print*,'n (binnr)i:',n
+      print*, 'ndum:',ndum
+      print*, 'adum:',adum
 
       enddo
+
+      !print*, 'hn:',hn
+      !print*, 'hac:',hac
+      print*, 'sizmin:',sizmin
+      print*, 'ndum:',ndum
+      print*, 'adum:',adum
+
      
       print *,'------------------------------------------ '
       print *,'----------time averaging ----------------- '
@@ -702,9 +718,9 @@
       count2(2)=1
 
       
-      status = NF_PUT_VARA_REAL(ncidout,varidap,start2,count2,pa(1:kmax))
+      status = NF_PUT_VARA_REAL(ncidout,varidap,start2,count2,pa)
       if (STATUS .ne. nf_noerr) call handle_err(STATUS)
-      status = NF_PUT_VARA_REAL(ncidout,varidqlp,start2,count2,pql(1:kmax))
+      status = NF_PUT_VARA_REAL(ncidout,varidqlp,start2,count2,pql)
       if (STATUS .ne. nf_noerr) call handle_err(STATUS)
 
       ! add 1D size densities
@@ -741,17 +757,17 @@
       count3(1)=nbin
       count3(2)=kmax
       count3(3)=1
-      status = NF_PUT_VARA_REAL(ncidout,varidpnlev,start3,count3,hnlev(1:nbin,1:kmax))
+      status = NF_PUT_VARA_REAL(ncidout,varidpnlev,start3,count3,hnlev(1:nbin))
       if (STATUS .ne. nf_noerr) call handle_err(STATUS)
-      status = NF_PUT_VARA_REAL(ncidout,varidpw,start3,count3,hw(1:nbin,1:kmax))
+      status = NF_PUT_VARA_REAL(ncidout,varidpw,start3,count3,hw(1:nbin))
       if (STATUS .ne. nf_noerr) call handle_err(STATUS)
-      status = NF_PUT_VARA_REAL(ncidout,varidpthl,start3,count3,hthl(1:nbin,1:kmax))
+      status = NF_PUT_VARA_REAL(ncidout,varidpthl,start3,count3,hthl(1:nbin))
       if (STATUS .ne. nf_noerr) call handle_err(STATUS)
-      status = NF_PUT_VARA_REAL(ncidout,varidpthv,start3,count3,hthv(1:nbin,1:kmax))
+      status = NF_PUT_VARA_REAL(ncidout,varidpthv,start3,count3,hthv(1:nbin))
       if (STATUS .ne. nf_noerr) call handle_err(STATUS)
-      status = NF_PUT_VARA_REAL(ncidout,varidpqt,start3,count3,hqt(1:nbin,1:kmax))
+      status = NF_PUT_VARA_REAL(ncidout,varidpqt,start3,count3,hqt(1:nbin))
       if (STATUS .ne. nf_noerr) call handle_err(STATUS)
-      status = NF_PUT_VARA_REAL(ncidout,varidpql,start3,count3,hql(1:nbin,1:kmax))
+      status = NF_PUT_VARA_REAL(ncidout,varidpql,start3,count3,hql(1:nbin))
       if (STATUS .ne. nf_noerr) call handle_err(STATUS)
 
 
@@ -869,7 +885,7 @@
       pql = pql / (cmax)
       pa  = pa  / (cmax)
       
-      print *,'   maximum cloud fraction = ',maxval(pa)
+      !print *,'   maximum cloud fraction = ',maxval(pa)
       print *,'   projected cloud fraction = ',aptot*100.,'%'
       
       return
@@ -1272,8 +1288,6 @@
           do ss = 2,cc
             if (ss.gt.ff) then
               if (bb.eq.1) then
-                print*, 'ff',ff
-                print*, 'ss:',ss
               endif
               secondx = binclouds(ss,1)
               secondy = binclouds(ss,2)

@@ -60,16 +60,16 @@
      &   ncloud_bin (binmax), &
      &   hmc  (binmax)
       real &
-     &   hnlev(binmax,kmax), &
-     &   ha   (binmax,kmax), &
-     &   hw   (binmax,kmax), &
-     &   hm   (binmax,kmax), &
-     &   hthl (binmax,kmax), &
-     &   hqt  (binmax,kmax), &
-     &   hql  (binmax,kmax), &
-     &   hthv (binmax,kmax)
+     &   hnlev(binmax), &
+     &   ha   (binmax), &
+     &   hw   (binmax), &
+     &   hm   (binmax), &
+     &   hthl (binmax), &
+     &   hqt  (binmax), &
+     &   hql  (binmax), &
+     &   hthv (binmax)
       real &
-     &   pql(kmax),pa(kmax), aptot
+     &   pql,pa, aptot
       character &
      &   sizname*30
 
