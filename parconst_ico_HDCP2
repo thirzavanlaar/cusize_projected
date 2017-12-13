@@ -1,0 +1,27 @@
+!c
+!c    ------------------------------------------
+!c    In *parconst* the number of grid points in
+!c    x, y, and z-direction are set.
+!c    ------------------------------------------
+
+      integer &
+     & vmax,cmax,kmax,kmaxp1, &
+     & fieldmax, &
+     & binmax,cldmax
+
+      real &
+     & dz,dtav
+     
+      parameter(cmax=2846164)   !total nr of cells (midpoints) in grid
+      parameter(vmax=3)     !triangular grid: each cell has 3 vertices (i.e. corner points) & 3 adjacent cells
+
+      parameter(kmax  =38)
+      parameter(kmaxp1=kmax+1)
+
+      !parameter(dx=50.)
+      !parameter(dy=50.)
+      parameter(dz=40.)
+      
+      parameter(binmax=1688)
+      parameter(cldmax=cmax*kmax)
+      parameter(dtav=3600.)
