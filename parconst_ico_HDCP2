@@ -15,7 +15,7 @@
       parameter(cmax=2846164)   !total nr of cells (midpoints) in grid
       parameter(vmax=3)     !triangular grid: each cell has 3 vertices (i.e. corner points) & 3 adjacent cells
 
-      parameter(kmax  =38)
+      parameter(kmax  =68)
       parameter(kmaxp1=kmax+1)
 
       !parameter(dx=50.)
