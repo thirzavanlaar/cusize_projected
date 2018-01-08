@@ -22,9 +22,10 @@
 
 
       !--- open nc files ---
-      !fname_var = 'subsubdomain_lasttimestep.nc'
       fname_var = 'lasttimestep.nc'
+      !fname_var = '20131220_TA_lowhalf.nc'
       print *,'which input file (ql)?'
+      !read(5,*) fname_var
       print *,'opening file: ',fname_var
       STATUS = nf_open(fname_var, nf_nowrite, ncidql)
       if (STATUS .ne. nf_noerr) call handle_err(STATUS)
@@ -32,6 +33,7 @@
       !fname_grid = "subsubgrid.nc"
       fname_grid = "NarvalDom2_NestE-R02B14_DOM03.nc"
       print *,'which input file (grid)?'
+      !read(5,*) fname_var
       print *,'opening file: ',fname_grid
       STATUS = nf_open(fname_grid, nf_nowrite, ncidgrid)
       if (STATUS .ne. nf_noerr) call handle_err(STATUS)
@@ -184,6 +186,11 @@
         cell_neighbor = temp3
       endif
 
+      print *,'closing NetCDF file grid'
+      print *,'ncidgrid:',ncidgrid
+
+      status = NF_CLOSE(ncidgrid)
+      if (status /= nf_noerr) call handle_err(STATUS)
 
       !--- user input ---
       call userinput
@@ -240,13 +247,17 @@
 
         call nextfield(f)
 
+        print *,'closing NetCDF file ql 2'
+        status = NF_CLOSE(ncidql)
+        if (status /= nf_noerr) call handle_err(STATUS)
+
         call slabstat
 
         call cluster(indcentre4)
 
-        !if (ncloud.gt.0) then
-        !  call nnspacing(nbin,indcentre4)
-        !endif
+        if (ncloud.gt.0) then
+          call nnspacing(indcentre4)
+        endif
 
         !--- update time index ---
         itimold = itim
@@ -260,14 +271,10 @@
 
 
       !--- close nc files ---
-      print *,'closing NetCDF file ql'
-      status = NF_CLOSE(ncidql)
-      if (status /= nf_noerr) call handle_err(STATUS)
-      print *,'closing NetCDF file grid'
-      print *,'ncidgrid:',ncidgrid
+      !print *,'closing NetCDF file ql'
+      !status = NF_CLOSE(ncidql)
+      !if (status /= nf_noerr) call handle_err(STATUS)
 
-      status = NF_CLOSE(ncidgrid)
-      if (status /= nf_noerr) call handle_err(STATUS)
       print *,'closing NetCDF file out'
       status = NF_CLOSE(ncidout)
       if (STATUS .ne. nf_noerr) call handle_err(STATUS)
@@ -398,7 +405,8 @@
           hm(n) = 0.
        enddo
       enddo
-     
+    
+ 
       return
       end
       
@@ -437,6 +445,11 @@
      
       do n=1,nbin
         
+  
+        if (isnan(hn(n))) then
+          hn(n) = 0.
+        endif
+
         !--- sub-ensemble-averages (div by nr of clouds in sub-ens.) ---
         if (hn(n).gt.0) then
           hwc(n)  = hwc(n)  / hn(n)   
@@ -449,6 +462,7 @@
           hac(n)  = hac(n)  / (nfield*sizmin)
           hmc(n)  = hmc(n)  / (nfield*sizmin)
         endif
+
 
         if (hnlev(n).gt.0) then
           
@@ -466,23 +480,12 @@
         endif
         
         if (hn(n).ne.0.) then  
-          print*,'hn(n):',hn(n)
           ndum = ndum + hn(n)*sizmin
           adum = adum + hac(n)*sizmin
           !mdum = mdum + hmc(n)*sizmin
         endif
 
-      print*,'n (binnr)i:',n
-      print*, 'ndum:',ndum
-      print*, 'adum:',adum
-
       enddo
-
-      !print*, 'hn:',hn
-      !print*, 'hac:',hac
-      print*, 'sizmin:',sizmin
-      print*, 'ndum:',ndum
-      print*, 'adum:',adum
 
      
       print *,'------------------------------------------ '
@@ -730,6 +733,8 @@
       count2(1)=nbin
       count2(2)=1
 
+      print*, 'shape of hnns_mean',shape(hnns_mean)
+      print*, 'shape of hnns_stdev',shape(hnns_stdev)
 
       status = NF_PUT_VARA_REAL(ncidout,varidn,start2,count2,hn(1:nbin))
       if (STATUS .ne. nf_noerr) call handle_err(STATUS)
@@ -755,20 +760,22 @@
       !start3(3)=itim
       start3(3)=1
       count3(1)=nbin
-      count3(2)=kmax
-      count3(3)=1
-      status = NF_PUT_VARA_REAL(ncidout,varidpnlev,start3,count3,hnlev(1:nbin))
-      if (STATUS .ne. nf_noerr) call handle_err(STATUS)
-      status = NF_PUT_VARA_REAL(ncidout,varidpw,start3,count3,hw(1:nbin))
-      if (STATUS .ne. nf_noerr) call handle_err(STATUS)
-      status = NF_PUT_VARA_REAL(ncidout,varidpthl,start3,count3,hthl(1:nbin))
-      if (STATUS .ne. nf_noerr) call handle_err(STATUS)
-      status = NF_PUT_VARA_REAL(ncidout,varidpthv,start3,count3,hthv(1:nbin))
-      if (STATUS .ne. nf_noerr) call handle_err(STATUS)
-      status = NF_PUT_VARA_REAL(ncidout,varidpqt,start3,count3,hqt(1:nbin))
-      if (STATUS .ne. nf_noerr) call handle_err(STATUS)
-      status = NF_PUT_VARA_REAL(ncidout,varidpql,start3,count3,hql(1:nbin))
-      if (STATUS .ne. nf_noerr) call handle_err(STATUS)
+      !count3(2)=kmax
+      !count3(3)=1
+      count3(2)=1
+      print*,'size of hnlev:',size(hnlev)
+      !status = NF_PUT_VARA_REAL(ncidout,varidpnlev,start3,count3,hnlev(1:nbin))
+      !if (STATUS .ne. nf_noerr) call handle_err(STATUS)
+      !status = NF_PUT_VARA_REAL(ncidout,varidpw,start3,count3,hw(1:nbin))
+      !if (STATUS .ne. nf_noerr) call handle_err(STATUS)
+      !status = NF_PUT_VARA_REAL(ncidout,varidpthl,start3,count3,hthl(1:nbin))
+      !if (STATUS .ne. nf_noerr) call handle_err(STATUS)
+      !status = NF_PUT_VARA_REAL(ncidout,varidpthv,start3,count3,hthv(1:nbin))
+      !if (STATUS .ne. nf_noerr) call handle_err(STATUS)
+      !status = NF_PUT_VARA_REAL(ncidout,varidpqt,start3,count3,hqt(1:nbin))
+      !if (STATUS .ne. nf_noerr) call handle_err(STATUS)
+      !status = NF_PUT_VARA_REAL(ncidout,varidpql,start3,count3,hql(1:nbin))
+      !if (STATUS .ne. nf_noerr) call handle_err(STATUS)
 
 
 
@@ -1227,7 +1234,6 @@
       hmc(binnr)  = hmc(binnr) + dcm
       hqlc(binnr) = hqlc(binnr) + dcql
      
-     
       return
       end
       
@@ -1259,12 +1265,12 @@
 
       !-----calculate nearest-neighbour distances-------------
       
-      subroutine nnspacing(totbin,indcentre)
+      subroutine nnspacing(indcentre)
  
       include 'parconst'
       include 'comvar'
 
-      integer totbin,bb,cc,aa,ff,ss,pairs
+      integer bb,cc,aa,ff,ss,pairs
       real indcentre(cmax,4),firstx,firsty,secondx,secondy,mean,std
       real dist1,dist(ncloud*(ncloud-1)/2),binclouds(ncloud,2)
       
@@ -1297,19 +1303,20 @@
             endif
           enddo
         ncloud_bin(bb) = cc 
-        mean = SUM(dist)/real(pairs)
+        mean = SUM(dist(1:pairs))/real(pairs)
         std = sqrt(SUM((dist(1:pairs)-mean)**2)/(real(pairs)-1))
         if (pairs.ge.2) then
+          mean = SUM(dist/real(pairs))
           hnns_mean(bb) = mean  
         else
           hnns_mean(bb) = 0.
         endif
         if (pairs.ge.3) then
+          std = sqrt(SUM((dist(1:pairs)-mean)**2)/(real(pairs)-1))
           hnns_stdev(bb) = std  
         else
           hnns_stdev(bb) = 0.
         endif 
-        print *, 'pairs:',pairs 
 
       enddo
       enddo
