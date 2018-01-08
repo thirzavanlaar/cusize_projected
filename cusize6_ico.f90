@@ -22,15 +22,15 @@
 
 
       !--- open nc files ---
-      fname_var = 'subsubdomain_lasttimestep.nc'
-      !fname_var = 'lasttimestep.nc'
+      !fname_var = 'subsubdomain_lasttimestep.nc'
+      fname_var = 'lasttimestep.nc'
       print *,'which input file (ql)?'
       print *,'opening file: ',fname_var
       STATUS = nf_open(fname_var, nf_nowrite, ncidql)
       if (STATUS .ne. nf_noerr) call handle_err(STATUS)
 
-      fname_grid = "subsubgrid.nc"
-      !fname_grid = "NarvalDom2_NestE-R02B14_DOM03.nc"
+      !fname_grid = "subsubgrid.nc"
+      fname_grid = "NarvalDom2_NestE-R02B14_DOM03.nc"
       print *,'which input file (grid)?'
       print *,'opening file: ',fname_grid
       STATUS = nf_open(fname_grid, nf_nowrite, ncidgrid)
@@ -1297,7 +1297,7 @@
             endif
           enddo
         ncloud_bin(bb) = cc 
-        mean = SUM(dist/real(pairs))
+        mean = SUM(dist)/real(pairs)
         std = sqrt(SUM((dist(1:pairs)-mean)**2)/(real(pairs)-1))
         if (pairs.ge.2) then
           hnns_mean(bb) = mean  
