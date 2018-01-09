@@ -35,6 +35,7 @@ cusize6_ico
 # Run and obj folder
 obj/*
 run/*
+TA_lowhalf/*
 
 # Exlcude files with constants
 comnc
