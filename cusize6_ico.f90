@@ -1273,6 +1273,7 @@
       integer bb,cc,aa,ff,ss,pairs
       real indcentre(cmax,4),firstx,firsty,secondx,secondy,mean,std
       real dist1,dist(ncloud*(ncloud-1)/2),binclouds(ncloud,2)
+      real distnew,distold,disttotal
       
 
       do bb=1,nbin
@@ -1289,30 +1290,35 @@
         pairs = 0
         dist = 0
         do ff = 1,cc
+          distold = 400000.
+          disttotal = 0.
           firstx = binclouds(ff,1)
           firsty = binclouds(ff,2)
           do ss = 2,cc
             if (ss.gt.ff) then
-              if (bb.eq.1) then
-              endif
               secondx = binclouds(ss,1)
               secondy = binclouds(ss,2)
-              dist1 = haversine(firsty,firstx,secondy,secondx)
-              pairs = pairs+1
-              dist(pairs) = dist1
+              distnew = haversine(firsty,firstx,secondy,secondx)
+              !pairs = pairs+1
+              !dist(pairs) = dist1
+              if (distnew.le.distold) then
+                distold = distnew
+              endif
             endif
           enddo
+        disttotal = disttotal+distnew
+        dist(cc) = distnew
         ncloud_bin(bb) = cc 
-        mean = SUM(dist(1:pairs))/real(pairs)
-        std = sqrt(SUM((dist(1:pairs)-mean)**2)/(real(pairs)-1))
-        if (pairs.ge.2) then
-          mean = SUM(dist/real(pairs))
+        mean = disttotal/real(cc)
+        std = sqrt(SUM((dist(1:cc)-mean)**2)/(real(cc)-1))
+        if (cc.ge.2) then
+          !mean = SUM(dist/real(pairs))
           hnns_mean(bb) = mean  
         else
           hnns_mean(bb) = 0.
         endif
-        if (pairs.ge.3) then
-          std = sqrt(SUM((dist(1:pairs)-mean)**2)/(real(pairs)-1))
+        if (cc.ge.3) then
+          !std = sqrt(SUM((dist(1:pairs)-mean)**2)/(real(pairs)-1))
           hnns_stdev(bb) = std  
         else
           hnns_stdev(bb) = 0.
